@@ -1,12 +1,12 @@
 from collections.abc import Mapping
 
+from esphome import codegen as cg, config_validation as cv
 from esphome.components import binary_sensor
 from esphome.const import (
     DEVICE_CLASS_CONNECTIVITY,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_RUNNING,
 )
-import esphome.config_validation as cv
 
 from . import MakeskyblueUART
 
@@ -39,7 +39,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config: Mapping) -> None:
-    parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
+    parent = await cg.get_variable(config[CONF_MAKESKYBLUE_UART_ID])
     for key in TYPES:
         if key in config:
             conf = config[key]

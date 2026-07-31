@@ -23,7 +23,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config: Mapping) -> None:
-    parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
+    parent = await cg.get_variable(config[CONF_MAKESKYBLUE_UART_ID])
     if CONF_BATTERY_TYPE in config:
         conf = config[CONF_BATTERY_TYPE]
         sel = await select.new_select(conf, options=DEFAULT_BATTERY_TYPES)

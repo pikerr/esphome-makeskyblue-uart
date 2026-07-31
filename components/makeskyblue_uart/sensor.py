@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 
+from esphome import codegen as cg, config_validation as cv
 from esphome.components import sensor
 from esphome.const import (
     DEVICE_CLASS_BATTERY,
@@ -16,7 +17,6 @@ from esphome.const import (
     UNIT_VOLT,
     UNIT_WATT,
 )
-import esphome.config_validation as cv
 
 from . import MakeskyblueUART
 
@@ -105,7 +105,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config: Mapping) -> None:
-    parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
+    parent = await cg.get_variable(config[CONF_MAKESKYBLUE_UART_ID])
     for key, schema in TYPES.items():
         if key in config:
             conf = config[key]

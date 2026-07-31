@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 
+from esphome import codegen as cg, config_validation as cv
 from esphome.components import text_sensor
-import esphome.config_validation as cv
 
 from . import MakeskyblueUART
 
@@ -17,7 +17,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config: Mapping) -> None:
-    parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
+    parent = await cg.get_variable(config[CONF_MAKESKYBLUE_UART_ID])
     if CONF_RAW_FRAME in config:
         conf = config[CONF_RAW_FRAME]
         sens = await text_sensor.new_text_sensor(conf)

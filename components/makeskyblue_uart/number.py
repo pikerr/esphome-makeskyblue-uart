@@ -86,7 +86,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config: Mapping) -> None:
-    parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
+    parent = await cg.get_variable(config[CONF_MAKESKYBLUE_UART_ID])
     for key, (reg_id, _, def_min, def_max, def_step) in TYPES.items():
         if key in config:
             conf = config[key]
