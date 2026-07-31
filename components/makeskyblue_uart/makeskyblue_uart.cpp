@@ -62,8 +62,8 @@ void MakeskyblueUART::loop() {
     this->read_byte(&byte);
     this->rx_buffer_.push_back(byte);
 
-    // Sync to start header 0xAA
-    if (this->rx_buffer_[0] != 0xAA) {
+    // Sync to start header 0xAA or 0x55
+    if (this->rx_buffer_[0] != 0xAA && this->rx_buffer_[0] != 0x55) {
       this->rx_buffer_.erase(this->rx_buffer_.begin());
       continue;
     }
@@ -72,55 +72,84 @@ void MakeskyblueUART::loop() {
       continue;
     }
 
-    uint8_t frame_type = this->rx_buffer_[1];
-
-    if (frame_type == 0xBB) {
-      // Status response frame expected length: 20 bytes
-      if (this->rx_buffer_.size() < 20)
+    if (this->rx_buffer_[0] == 0x55 && this->rx_buffer_[1] == 0xAA) {
+      // 15-byte response frame: 55 AA 03 ...
+      if (this->rx_buffer_.size() < 15)
         continue;
 
-      // Validate CRC (sum of bytes 1..18)
+      // Validate CRC (sum of bytes 0..13)
       uint8_t crc = 0;
-      for (int i = 1; i < 19; i++) {
+      for (int i = 0; i < 14; i++) {
         crc += this->rx_buffer_[i];
       }
 
-      if (crc == this->rx_buffer_[19]) {
-        ESP_LOGD(TAG, "Received valid status response frame (20 bytes)");
-        this->parse_status_frame_(this->rx_buffer_.data());
+      if (crc == this->rx_buffer_[14]) {
+        ESP_LOGD(TAG, "Received frame (15 bytes): %s",
+                 format_hex_pretty(this->rx_buffer_.data(), 15).c_str());
+        this->parse_status_frame_15_(this->rx_buffer_.data());
       } else {
-        ESP_LOGW(TAG, "Status frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
-                 crc, this->rx_buffer_[19]);
+        ESP_LOGW(TAG, "15-byte CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
+                 crc, this->rx_buffer_[14]);
       }
 
       this->rx_buffer_.erase(this->rx_buffer_.begin(),
-                             this->rx_buffer_.begin() + 20);
+                             this->rx_buffer_.begin() + 15);
 
-    } else if (frame_type == 0xDA) {
-      // Config response frame expected length: 8 bytes
-      if (this->rx_buffer_.size() < 8)
-        continue;
+    } else if (this->rx_buffer_[0] == 0xAA) {
+      uint8_t frame_type = this->rx_buffer_[1];
 
-      // Validate CRC (sum of bytes 1..6)
-      uint8_t crc = 0;
-      for (int i = 1; i < 7; i++) {
-        crc += this->rx_buffer_[i];
-      }
+      if (frame_type == 0xBB) {
+        // Status response frame expected length: 20 bytes
+        if (this->rx_buffer_.size() < 20)
+          continue;
 
-      if (crc == this->rx_buffer_[7]) {
-        ESP_LOGD(TAG, "Received valid config response frame (8 bytes)");
-        this->parse_config_frame_(this->rx_buffer_.data());
+        // Validate CRC (sum of bytes 1..18)
+        uint8_t crc = 0;
+        for (int i = 1; i < 19; i++) {
+          crc += this->rx_buffer_[i];
+        }
+
+        if (crc == this->rx_buffer_[19]) {
+          ESP_LOGD(TAG, "Received frame (20 bytes): %s",
+                   format_hex_pretty(this->rx_buffer_.data(), 20).c_str());
+          this->parse_status_frame_(this->rx_buffer_.data());
+        } else {
+          ESP_LOGW(TAG, "Status frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
+                   crc, this->rx_buffer_[19]);
+        }
+
+        this->rx_buffer_.erase(this->rx_buffer_.begin(),
+                               this->rx_buffer_.begin() + 20);
+
+      } else if (frame_type == 0xDA) {
+        // Config response frame expected length: 8 bytes
+        if (this->rx_buffer_.size() < 8)
+          continue;
+
+        // Validate CRC (sum of bytes 1..6)
+        uint8_t crc = 0;
+        for (int i = 1; i < 7; i++) {
+          crc += this->rx_buffer_[i];
+        }
+
+        if (crc == this->rx_buffer_[7]) {
+          ESP_LOGD(TAG, "Received frame (8 bytes): %s",
+                   format_hex_pretty(this->rx_buffer_.data(), 8).c_str());
+          this->parse_config_frame_(this->rx_buffer_.data());
+        } else {
+          ESP_LOGW(TAG, "Config frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
+                   crc, this->rx_buffer_[7]);
+        }
+
+        this->rx_buffer_.erase(this->rx_buffer_.begin(),
+                               this->rx_buffer_.begin() + 8);
+
       } else {
-        ESP_LOGW(TAG, "Config frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
-                 crc, this->rx_buffer_[7]);
+        // Unknown frame type, discard first byte to resync
+        ESP_LOGV(TAG, "Unknown frame type 0x%02X, discarding byte", frame_type);
+        this->rx_buffer_.erase(this->rx_buffer_.begin());
       }
-
-      this->rx_buffer_.erase(this->rx_buffer_.begin(),
-                             this->rx_buffer_.begin() + 8);
-
     } else {
-      // Unknown frame type, discard first byte to resync
-      ESP_LOGV(TAG, "Unknown frame type 0x%02X, discarding byte", frame_type);
       this->rx_buffer_.erase(this->rx_buffer_.begin());
     }
   }
@@ -281,9 +310,31 @@ void MakeskyblueUART::parse_config_frame_(const uint8_t *frame) {
     }
 #endif
     break;
-  default:
-    break;
   }
+}
+
+void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
+  this->last_frame_time_ = millis();
+
+#ifdef USE_BINARY_SENSOR
+  if (this->link_connected_binary_sensor_) {
+    this->link_connected_binary_sensor_->publish_state(true);
+  }
+#endif
+
+  // Frame structure: 55 AA 03 07 00 08 [pv_v_lo pv_v_hi] [batt_i_lo batt_i_hi] [res res] [pv_w_hi pv_w_lo] [crc]
+  uint16_t pv_v_raw = frame[6] | (frame[7] << 8);
+  uint16_t batt_i_raw = frame[8] | (frame[9] << 8);
+  uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
+
+#ifdef USE_SENSOR
+  if (this->solar_voltage_sensor_)
+    this->solar_voltage_sensor_->publish_state(pv_v_raw * 0.1f);
+  if (this->battery_current_sensor_)
+    this->battery_current_sensor_->publish_state(batt_i_raw * 0.01f);
+  if (this->solar_power_sensor_)
+    this->solar_power_sensor_->publish_state(pv_w_raw * 1.0f);
+#endif
 }
 
 void MakeskyblueUART::dump_config() {

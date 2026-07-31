@@ -101,6 +101,7 @@ class MakeskyblueUART : public PollingComponent, public uart::UARTDevice {
  protected:
   void send_status_poll_();
   void parse_status_frame_(const uint8_t *frame);
+  void parse_status_frame_15_(const uint8_t *frame);
   void parse_config_frame_(const uint8_t *frame);
 
   std::vector<uint8_t> rx_buffer_;
