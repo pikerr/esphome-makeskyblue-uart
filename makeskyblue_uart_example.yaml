@@ -1,0 +1,108 @@
+esphome:
+  name: makeskyblue-mppt
+  friendly_name: MakeSkyBlue MPPT Controller
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable Home Assistant API and Web Server
+api:
+ota:
+  - platform: esphome
+
+logger:
+  level: DEBUG
+
+# Configure hardware UART for MiniUSB port communication
+uart:
+  - id: uart_makeskyblue
+    tx_pin: GPIO17
+    rx_pin: GPIO16
+    baud_rate: 9600
+
+# MakeSkyBlue UART Component
+makeskyblue_uart:
+  id: msb_uart
+  uart_id: uart_makeskyblue
+  update_interval: 2s
+
+sensor:
+  - platform: makeskyblue_uart
+    makeskyblue_uart_id: msb_uart
+    battery_voltage:
+      name: "Battery Voltage"
+    battery_current:
+      name: "Battery Current"
+    solar_voltage:
+      name: "Solar Voltage"
+    solar_power:
+      name: "Solar Power"
+    temperature:
+      name: "Controller Temperature"
+    accumulated_kwh:
+      name: "Accumulated Energy"
+    bulk_voltage:
+      name: "MPPT Bulk Voltage"
+    float_voltage:
+      name: "MPPT Float Voltage"
+    max_charge_current:
+      name: "Max Charge Current"
+    uvp_off_voltage:
+      name: "UVP Cutoff Voltage"
+    uvp_recover_voltage:
+      name: "UVP Recovery Voltage"
+
+binary_sensor:
+  - platform: makeskyblue_uart
+    makeskyblue_uart_id: msb_uart
+    link_connected:
+      name: "UART Link Connected"
+    mppt_mode:
+      name: "MPPT Charging Active"
+    battery_undervoltage:
+      name: "Battery Undervoltage Alarm"
+    battery_overvoltage:
+      name: "Battery Overvoltage Alarm"
+
+number:
+  - platform: makeskyblue_uart
+    makeskyblue_uart_id: msb_uart
+    bulk_voltage:
+      name: "Set Bulk Voltage"
+      min_value: 10.0
+      max_value: 65.0
+      step: 0.1
+    float_voltage:
+      name: "Set Float Voltage"
+      min_value: 10.0
+      max_value: 65.0
+      step: 0.1
+    max_charge_current:
+      name: "Set Max Charge Current"
+      min_value: 0.0
+      max_value: 60.0
+      step: 1.0
+    uvp_off_voltage:
+      name: "Set UVP Cutoff Voltage"
+      min_value: 9.0
+      max_value: 60.0
+      step: 0.1
+    uvp_recover_voltage:
+      name: "Set UVP Recovery Voltage"
+      min_value: 10.0
+      max_value: 62.0
+      step: 0.1
+
+select:
+  - platform: makeskyblue_uart
+    makeskyblue_uart_id: msb_uart
+    battery_type:
+      name: "Battery Type"
+
+text_sensor:
+  - platform: makeskyblue_uart
+    makeskyblue_uart_id: msb_uart
+    raw_frame:
+      name: "Raw UART Status Frame"
