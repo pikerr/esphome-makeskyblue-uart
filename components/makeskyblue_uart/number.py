@@ -3,6 +3,9 @@ from collections.abc import Mapping
 from esphome import codegen as cg, config_validation as cv
 from esphome.components import number
 from esphome.const import (
+    CONF_MAX_VALUE,
+    CONF_MIN_VALUE,
+    CONF_STEP,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_VOLTAGE,
     UNIT_AMPERE,
@@ -29,6 +32,9 @@ TYPES = {
             MakeskyblueUARTNumber,
             unit_of_measurement=UNIT_VOLT,
             device_class=DEVICE_CLASS_VOLTAGE,
+            min_value=10.0,
+            max_value=65.0,
+            step=0.1,
         ),
     ),
     CONF_FLOAT_VOLTAGE: (
@@ -37,6 +43,9 @@ TYPES = {
             MakeskyblueUARTNumber,
             unit_of_measurement=UNIT_VOLT,
             device_class=DEVICE_CLASS_VOLTAGE,
+            min_value=10.0,
+            max_value=65.0,
+            step=0.1,
         ),
     ),
     CONF_MAX_CHARGE_CURRENT: (
@@ -45,6 +54,9 @@ TYPES = {
             MakeskyblueUARTNumber,
             unit_of_measurement=UNIT_AMPERE,
             device_class=DEVICE_CLASS_CURRENT,
+            min_value=0.0,
+            max_value=60.0,
+            step=1.0,
         ),
     ),
     CONF_UVP_OFF_VOLTAGE: (
@@ -53,6 +65,9 @@ TYPES = {
             MakeskyblueUARTNumber,
             unit_of_measurement=UNIT_VOLT,
             device_class=DEVICE_CLASS_VOLTAGE,
+            min_value=9.0,
+            max_value=60.0,
+            step=0.1,
         ),
     ),
     CONF_UVP_RECOVER_VOLTAGE: (
@@ -61,6 +76,9 @@ TYPES = {
             MakeskyblueUARTNumber,
             unit_of_measurement=UNIT_VOLT,
             device_class=DEVICE_CLASS_VOLTAGE,
+            min_value=10.0,
+            max_value=62.0,
+            step=0.1,
         ),
     ),
 }
@@ -79,9 +97,9 @@ async def to_code(config: Mapping) -> None:
             conf = config[key]
             num = await number.new_number(
                 conf,
-                min_value=conf.get("min_value", 0.0),
-                max_value=conf.get("max_value", 100.0),
-                step=conf.get("step", 0.1),
+                min_value=conf[CONF_MIN_VALUE],
+                max_value=conf[CONF_MAX_VALUE],
+                step=conf[CONF_STEP],
             )
             cg.add(num.set_parent(parent))
             cg.add(num.set_register(reg_id))
