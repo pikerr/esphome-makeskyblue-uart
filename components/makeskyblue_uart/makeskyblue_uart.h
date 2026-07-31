@@ -105,7 +105,6 @@ class MakeskyblueUART : public PollingComponent, public uart::UARTDevice {
 
   std::vector<uint8_t> rx_buffer_;
   uint32_t last_frame_time_{0};
-  uint8_t config_poll_index_{0};
 
 #ifdef USE_SENSOR
   sensor::Sensor *battery_voltage_sensor_{nullptr};

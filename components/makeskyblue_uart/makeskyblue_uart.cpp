@@ -11,19 +11,6 @@ void MakeskyblueUART::setup() { this->rx_buffer_.reserve(64); }
 
 void MakeskyblueUART::update() {
   this->send_status_poll_();
-
-  // Periodically query one config register to keep config entities in sync
-  static const uint8_t config_regs[] = {
-      REG_BULK_VOLTAGE,    REG_FLOAT_VOLTAGE,       REG_MAX_CHARGE_CURRENT,
-      REG_UVP_OFF_VOLTAGE, REG_UVP_RECOVER_VOLTAGE, REG_BATTERY_TYPE};
-
-  uint8_t reg_to_read = config_regs[this->config_poll_index_];
-  this->config_poll_index_ = (this->config_poll_index_ + 1) %
-                             (sizeof(config_regs) / sizeof(config_regs[0]));
-
-  // Delay config read after status poll to allow controller time to respond
-  this->set_timeout(
-      300, [this, reg_to_read]() { this->read_register(reg_to_read); });
 }
 
 void MakeskyblueUART::send_status_poll_() {
