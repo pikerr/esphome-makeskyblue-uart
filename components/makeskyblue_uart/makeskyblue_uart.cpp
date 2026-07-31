@@ -31,6 +31,7 @@ void MakeskyblueUART::update() {
 void MakeskyblueUART::send_status_poll_() {
   // Read Status Packet: AA 55 00 00 00 55
   uint8_t poll_cmd[6] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x55};
+  ESP_LOGD(TAG, "Sending status poll request [AA 55 00 00 00 55]");
   this->write_array(poll_cmd, 6);
 }
 
@@ -42,6 +43,7 @@ void MakeskyblueUART::read_register(uint8_t reg) {
     crc += cmd[i];
   }
   cmd[6] = crc;
+  ESP_LOGD(TAG, "Sending read request for config reg 0x%02X", reg);
   this->write_array(cmd, 7);
 }
 
@@ -98,6 +100,7 @@ void MakeskyblueUART::loop() {
       }
 
       if (crc == this->rx_buffer_[19]) {
+        ESP_LOGD(TAG, "Received valid status response frame (20 bytes)");
         this->parse_status_frame_(this->rx_buffer_.data());
       } else {
         ESP_LOGW(TAG, "Status frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)", crc, this->rx_buffer_[19]);
@@ -116,6 +119,7 @@ void MakeskyblueUART::loop() {
       }
 
       if (crc == this->rx_buffer_[7]) {
+        ESP_LOGD(TAG, "Received valid config response frame (8 bytes)");
         this->parse_config_frame_(this->rx_buffer_.data());
       } else {
         ESP_LOGW(TAG, "Config frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)", crc, this->rx_buffer_[7]);
@@ -240,7 +244,7 @@ void MakeskyblueUART::parse_config_frame_(const uint8_t *frame) {
       if (this->uvp_off_voltage_sensor_) this->uvp_off_voltage_sensor_->publish_state(val);
 #endif
 #ifdef USE_NUMBER
-      if (this->uvp_off_voltage_number_) this->uvp_off_voltage_number_->publish_state(val);
+      if (this->uvp_number_) this->uvp_off_voltage_number_->publish_state(val);
 #endif
       break;
     case REG_UVP_RECOVER_VOLTAGE:
