@@ -25,61 +25,56 @@ MakeskyblueUARTNumber = makeskyblue_uart_ns.class_(
     "MakeskyblueUARTNumber", number.Number
 )
 
+
+def make_number_schema(unit_of_measurement, device_class):
+    return number.number_schema(
+        MakeskyblueUARTNumber,
+        unit_of_measurement=unit_of_measurement,
+        device_class=device_class,
+    ).extend(
+        {
+            cv.Optional(CONF_MIN_VALUE): cv.float_,
+            cv.Optional(CONF_MAX_VALUE): cv.float_,
+            cv.Optional(CONF_STEP): cv.float_,
+        }
+    )
+
+
 TYPES = {
     CONF_BULK_VOLTAGE: (
         0x01,
-        number.number_schema(
-            MakeskyblueUARTNumber,
-            unit_of_measurement=UNIT_VOLT,
-            device_class=DEVICE_CLASS_VOLTAGE,
-            min_value=10.0,
-            max_value=65.0,
-            step=0.1,
-        ),
+        make_number_schema(UNIT_VOLT, DEVICE_CLASS_VOLTAGE),
+        10.0,
+        65.0,
+        0.1,
     ),
     CONF_FLOAT_VOLTAGE: (
         0x02,
-        number.number_schema(
-            MakeskyblueUARTNumber,
-            unit_of_measurement=UNIT_VOLT,
-            device_class=DEVICE_CLASS_VOLTAGE,
-            min_value=10.0,
-            max_value=65.0,
-            step=0.1,
-        ),
+        make_number_schema(UNIT_VOLT, DEVICE_CLASS_VOLTAGE),
+        10.0,
+        65.0,
+        0.1,
     ),
     CONF_MAX_CHARGE_CURRENT: (
         0x04,
-        number.number_schema(
-            MakeskyblueUARTNumber,
-            unit_of_measurement=UNIT_AMPERE,
-            device_class=DEVICE_CLASS_CURRENT,
-            min_value=0.0,
-            max_value=60.0,
-            step=1.0,
-        ),
+        make_number_schema(UNIT_AMPERE, DEVICE_CLASS_CURRENT),
+        0.0,
+        60.0,
+        1.0,
     ),
     CONF_UVP_OFF_VOLTAGE: (
         0x05,
-        number.number_schema(
-            MakeskyblueUARTNumber,
-            unit_of_measurement=UNIT_VOLT,
-            device_class=DEVICE_CLASS_VOLTAGE,
-            min_value=9.0,
-            max_value=60.0,
-            step=0.1,
-        ),
+        make_number_schema(UNIT_VOLT, DEVICE_CLASS_VOLTAGE),
+        9.0,
+        60.0,
+        0.1,
     ),
     CONF_UVP_RECOVER_VOLTAGE: (
         0x06,
-        number.number_schema(
-            MakeskyblueUARTNumber,
-            unit_of_measurement=UNIT_VOLT,
-            device_class=DEVICE_CLASS_VOLTAGE,
-            min_value=10.0,
-            max_value=62.0,
-            step=0.1,
-        ),
+        make_number_schema(UNIT_VOLT, DEVICE_CLASS_VOLTAGE),
+        10.0,
+        62.0,
+        0.1,
     ),
 }
 
@@ -87,19 +82,22 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_MAKESKYBLUE_UART_ID): cv.use_id(MakeskyblueUART),
     }
-).extend({cv.Optional(type): schema[1] for type, schema in TYPES.items()})
+).extend({cv.Optional(type): schema_info[1] for type, schema_info in TYPES.items()})
 
 
 async def to_code(config: Mapping) -> None:
     parent = await cv.use_id(MakeskyblueUART)(config[CONF_MAKESKYBLUE_UART_ID])
-    for key, (reg_id, _) in TYPES.items():
+    for key, (reg_id, _, def_min, def_max, def_step) in TYPES.items():
         if key in config:
             conf = config[key]
+            min_v = conf.get(CONF_MIN_VALUE, def_min)
+            max_v = conf.get(CONF_MAX_VALUE, def_max)
+            step_v = conf.get(CONF_STEP, def_step)
             num = await number.new_number(
                 conf,
-                min_value=conf[CONF_MIN_VALUE],
-                max_value=conf[CONF_MAX_VALUE],
-                step=conf[CONF_STEP],
+                min_value=min_v,
+                max_value=max_v,
+                step=step_v,
             )
             cg.add(num.set_parent(parent))
             cg.add(num.set_register(reg_id))
