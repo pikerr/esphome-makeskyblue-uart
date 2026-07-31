@@ -244,7 +244,7 @@ void MakeskyblueUART::parse_config_frame_(const uint8_t *frame) {
       if (this->uvp_off_voltage_sensor_) this->uvp_off_voltage_sensor_->publish_state(val);
 #endif
 #ifdef USE_NUMBER
-      if (this->uvp_number_) this->uvp_off_voltage_number_->publish_state(val);
+      if (this->uvp_off_voltage_number_) this->uvp_off_voltage_number_->publish_state(val);
 #endif
       break;
     case REG_UVP_RECOVER_VOLTAGE:
