@@ -22,9 +22,8 @@ void MakeskyblueUART::update() {
                              (sizeof(config_regs) / sizeof(config_regs[0]));
 
   // Delay config read after status poll to allow controller time to respond
-  // (~300ms)
   this->set_timeout(
-      500, [this, reg_to_read]() { this->read_register(reg_to_read); });
+      300, [this, reg_to_read]() { this->read_register(reg_to_read); });
 }
 
 void MakeskyblueUART::send_status_poll_() {
