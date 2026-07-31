@@ -328,12 +328,26 @@ void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
   uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
 
 #ifdef USE_SENSOR
+  float pv_v = pv_v_raw * 0.1f;
+  float batt_i = batt_i_raw * 0.01f;
+  float pv_w = pv_w_raw * 1.0f;
+
   if (this->solar_voltage_sensor_)
-    this->solar_voltage_sensor_->publish_state(pv_v_raw * 0.1f);
+    this->solar_voltage_sensor_->publish_state(pv_v);
   if (this->battery_current_sensor_)
-    this->battery_current_sensor_->publish_state(batt_i_raw * 0.01f);
+    this->battery_current_sensor_->publish_state(batt_i);
   if (this->solar_power_sensor_)
-    this->solar_power_sensor_->publish_state(pv_w_raw * 1.0f);
+    this->solar_power_sensor_->publish_state(pv_w);
+
+  if (this->battery_voltage_sensor_ && batt_i > 0.1f && pv_w > 0.0f) {
+    this->battery_voltage_sensor_->publish_state(pv_w / batt_i);
+  }
+#endif
+
+#ifdef USE_BINARY_SENSOR
+  if (this->mppt_mode_binary_sensor_) {
+    this->mppt_mode_binary_sensor_->publish_state(pv_w_raw > 10);
+  }
 #endif
 }
 
