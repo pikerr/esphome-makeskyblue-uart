@@ -7,7 +7,16 @@ esp32:
   framework:
     type: arduino
 
-# Enable Home Assistant API and Web Server
+external_components:
+  - source: github://pikerr/esphome-makeskyblue-uart
+
+wifi:
+  ssid: "YOUR_WIFI_SSID"
+  password: "YOUR_WIFI_PASSWORD"
+  ap:
+    ssid: "Makeskyblue-Mppt Fallback"
+    password: "password123"
+
 api:
 ota:
   - platform: esphome
@@ -15,94 +24,74 @@ ota:
 logger:
   level: DEBUG
 
-# Configure hardware UART for MiniUSB port communication
 uart:
   - id: uart_makeskyblue
     tx_pin: GPIO17
     rx_pin: GPIO16
     baud_rate: 9600
 
-# MakeSkyBlue UART Component
 makeskyblue_uart:
-  id: msb_uart
+  id: msb
   uart_id: uart_makeskyblue
   update_interval: 2s
 
 sensor:
   - platform: makeskyblue_uart
-    makeskyblue_uart_id: msb_uart
+    makeskyblue_uart_id: msb
     battery_voltage:
-      name: "Battery Voltage"
+      id: msb_battery_voltage
+      name: "Напряжение АКБ"
     battery_current:
-      name: "Battery Current"
+      id: msb_battery_current
+      name: "Ток заряда АКБ"
     solar_voltage:
-      name: "Solar Voltage"
+      id: msb_solar_voltage
+      name: "Напряжение СП"
     solar_power:
-      name: "Solar Power"
+      id: msb_solar_power
+      name: "Мощность СП"
     temperature:
-      name: "Controller Temperature"
+      id: msb_temperature
+      name: "Температура"
     accumulated_kwh:
-      name: "Accumulated Energy"
-    bulk_voltage:
-      name: "MPPT Bulk Voltage"
-    float_voltage:
-      name: "MPPT Float Voltage"
-    max_charge_current:
-      name: "Max Charge Current"
-    uvp_off_voltage:
-      name: "UVP Cutoff Voltage"
-    uvp_recover_voltage:
-      name: "UVP Recovery Voltage"
+      id: msb_accumulated_kwh
+      name: "Выработка кВт·ч"
 
 binary_sensor:
   - platform: makeskyblue_uart
-    makeskyblue_uart_id: msb_uart
+    makeskyblue_uart_id: msb
     link_connected:
-      name: "UART Link Connected"
+      id: msb_link_connected
+      name: "Связь UART"
     mppt_mode:
-      name: "MPPT Charging Active"
-    battery_undervoltage:
-      name: "Battery Undervoltage Alarm"
-    battery_overvoltage:
-      name: "Battery Overvoltage Alarm"
+      id: msb_mppt_mode
+      name: "Режим MPPT"
 
 number:
   - platform: makeskyblue_uart
-    makeskyblue_uart_id: msb_uart
+    makeskyblue_uart_id: msb
     bulk_voltage:
-      name: "Set Bulk Voltage"
+      id: msb_bulk_voltage
+      name: "Задать Bulk V"
       min_value: 10.0
       max_value: 65.0
       step: 0.1
     float_voltage:
-      name: "Set Float Voltage"
+      id: msb_float_voltage
+      name: "Задать Float V"
       min_value: 10.0
       max_value: 65.0
       step: 0.1
     max_charge_current:
-      name: "Set Max Charge Current"
+      id: msb_max_charge_current
+      name: "Задать макс. ток A"
       min_value: 0.0
       max_value: 60.0
       step: 1.0
-    uvp_off_voltage:
-      name: "Set UVP Cutoff Voltage"
-      min_value: 9.0
-      max_value: 60.0
-      step: 0.1
-    uvp_recover_voltage:
-      name: "Set UVP Recovery Voltage"
-      min_value: 10.0
-      max_value: 62.0
-      step: 0.1
 
 select:
   - platform: makeskyblue_uart
-    makeskyblue_uart_id: msb_uart
+    makeskyblue_uart_id: msb
     battery_type:
-      name: "Battery Type"
-
-text_sensor:
-  - platform: makeskyblue_uart
-    makeskyblue_uart_id: msb_uart
-    raw_frame:
-      name: "Raw UART Status Frame"
+      id: msb_battery_type
+      name: "Тип АКБ"
