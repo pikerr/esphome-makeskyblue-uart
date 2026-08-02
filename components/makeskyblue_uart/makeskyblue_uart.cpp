@@ -263,30 +263,16 @@ void MakeskyblueUART::loop() {
     }
   }
 
-  // Timeout check (no valid status frame for > 20000 ms)
+  // Timeout check (no valid status frame for > 60000 ms / 60 seconds)
   uint32_t now = millis();
-  if (this->last_frame_time_ != 0 && (now - this->last_frame_time_ > 20000)) {
-    ESP_LOGW(TAG, "Connection timeout (no status frames from controller)");
+  if (this->last_frame_time_ != 0 && (now - this->last_frame_time_ > 60000)) {
+    ESP_LOGW(TAG, "Connection timeout (no status frames from controller for 60s)");
     this->last_frame_time_ = 0;
 
 #ifdef USE_BINARY_SENSOR
     if (this->link_connected_binary_sensor_) {
       this->link_connected_binary_sensor_->publish_state(false);
     }
-#endif
-#ifdef USE_SENSOR
-    if (this->battery_voltage_sensor_)
-      this->battery_voltage_sensor_->publish_state(NAN);
-    if (this->battery_current_sensor_)
-      this->battery_current_sensor_->publish_state(NAN);
-    if (this->solar_voltage_sensor_)
-      this->solar_voltage_sensor_->publish_state(NAN);
-    if (this->solar_power_sensor_)
-      this->solar_power_sensor_->publish_state(NAN);
-    if (this->temperature_sensor_)
-      this->temperature_sensor_->publish_state(NAN);
-    if (this->accumulated_kwh_sensor_)
-      this->accumulated_kwh_sensor_->publish_state(NAN);
 #endif
   }
 }
