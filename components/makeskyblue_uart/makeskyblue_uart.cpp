@@ -333,43 +333,55 @@ void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
   }
 #endif
 
-  // 15-byte status frame structure:
+  // 15-byte frame structure:
   // [0..1]: 55 AA (Header)
-  // [2]: 03 (Command)
-  // [3]: 07 (Register/Addr)
+  // [2]: 03 (Command response)
+  // [3]: Register / Telemetry Group Address (0x07, 0x00, 0x01, etc.)
   // [4..5]: 00 08 (Data Length = 8 bytes)
-  // [6..7]: PV Voltage (Little Endian, scale 0.1 V)
-  // [8..9]: System Voltage Code (Big Endian: 4 = 48V, 3 = 36V, 2 = 24V, 1 = 12V)
-  // [10..11]: Reserved (0x0000)
-  // [12..13]: PV Power (Big Endian, scale 0.1 W)
-  // [14]: Checksum (Sum of bytes 0..13)
+  // [6..13]: Data Payload
+  // [14]: Checksum (Sum of bytes 0..13 & 0xFF)
 
-  uint16_t pv_v_raw = frame[6] | (frame[7] << 8);
-  uint16_t sys_code_raw = (frame[8] << 8) | frame[9];
-  uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
+  uint8_t reg_addr = frame[3];
 
-  float pv_v = pv_v_raw * 0.1f;
-  float pv_w = pv_w_raw * 0.1f;
+  if (reg_addr == 0x07) {
+    uint16_t pv_v_raw = frame[6] | (frame[7] << 8);
+    uint16_t sys_code_raw = (frame[8] << 8) | frame[9];
+    uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
 
-  float batt_v_nom = (sys_code_raw > 0 && sys_code_raw <= 4) ? (sys_code_raw * 12.0f) : 48.0f;
-  float batt_i = (pv_w > 0.0f && batt_v_nom > 0.0f) ? (pv_w / batt_v_nom) : 0.0f;
+    float pv_v = pv_v_raw * 0.1f;
+    float pv_w = pv_w_raw * 0.1f;
+    float batt_v_nom = (sys_code_raw > 0 && sys_code_raw <= 4) ? (sys_code_raw * 12.0f) : 48.0f;
+    float batt_i = (pv_w > 0.0f && batt_v_nom > 0.0f) ? (pv_w / batt_v_nom) : 0.0f;
 
 #ifdef USE_SENSOR
-  if (this->solar_voltage_sensor_)
-    this->solar_voltage_sensor_->publish_state(pv_v);
-  if (this->solar_power_sensor_)
-    this->solar_power_sensor_->publish_state(pv_w);
-  if (this->battery_voltage_sensor_)
-    this->battery_voltage_sensor_->publish_state(batt_v_nom);
-  if (this->battery_current_sensor_)
-    this->battery_current_sensor_->publish_state(batt_i);
+    if (this->solar_voltage_sensor_)
+      this->solar_voltage_sensor_->publish_state(pv_v);
+    if (this->solar_power_sensor_)
+      this->solar_power_sensor_->publish_state(pv_w);
+    if (this->battery_voltage_sensor_)
+      this->battery_voltage_sensor_->publish_state(batt_v_nom);
+    if (this->battery_current_sensor_)
+      this->battery_current_sensor_->publish_state(batt_i);
 #endif
 
 #ifdef USE_BINARY_SENSOR
-  if (this->mppt_mode_binary_sensor_) {
-    this->mppt_mode_binary_sensor_->publish_state(pv_w > 1.0f);
-  }
+    if (this->mppt_mode_binary_sensor_) {
+      this->mppt_mode_binary_sensor_->publish_state(pv_w > 0.5f);
+    }
 #endif
+
+  } else {
+    ESP_LOGD(TAG, "Received 15-byte frame for addr 0x%02X: %s", reg_addr,
+             format_hex_pretty(frame, 15).c_str());
+
+    // Generic parse for telemetry frames if addr 0x00 / 0x01 contains real-time V_batt
+    uint16_t val1_le = frame[6] | (frame[7] << 8);
+    uint16_t val2_le = frame[8] | (frame[9] << 8);
+    uint16_t val3_be = (frame[12] << 8) | frame[13];
+
+    ESP_LOGD(TAG, "  Telemetry 0x%02X values: LE1=%.1f, LE2=%.1f, BE3=%.1f",
+             reg_addr, val1_le * 0.1f, val2_le * 0.1f, val3_be * 0.1f);
+  }
 }
 
 void MakeskyblueUART::dump_config() {
