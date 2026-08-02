@@ -14,14 +14,8 @@ void MakeskyblueUART::update() {
 }
 
 void MakeskyblueUART::send_status_poll_() {
-  static uint8_t poll_idx = 0;
-  uint8_t addrs[] = {0x00, 0x01, 0x07};
-  uint8_t addr = addrs[poll_idx];
-  poll_idx = (poll_idx + 1) % 3;
-
-  uint8_t poll_cmd[6] = {0xAA, 0x55, addr, 0x00, 0x00, static_cast<uint8_t>((0x55 + addr) & 0xFF)};
-  ESP_LOGD(TAG, "Sending status poll request [AA 55 %02X 00 00 %02X] (addr 0x%02X)",
-           addr, poll_cmd[5], addr);
+  uint8_t poll_cmd[6] = {0xAA, 0x55, 0x07, 0x00, 0x00, 0x5C};
+  ESP_LOGD(TAG, "Sending status poll request [AA 55 07 00 00 5C] (addr 0x07)");
   this->write_array(poll_cmd, 6);
 }
 
