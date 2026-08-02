@@ -76,27 +76,33 @@ void MakeskyblueUART::loop() {
     }
 
     if (this->rx_buffer_[0] == 0x55 && this->rx_buffer_[1] == 0xAA) {
-      // 15-byte response frame: 55 AA 03 ...
-      if (this->rx_buffer_.size() < 15)
+      // Dynamic response frame starting with 55 AA
+      if (this->rx_buffer_.size() < 6)
         continue;
 
-      // Validate CRC (sum of bytes 0..13)
+      uint16_t data_len = (this->rx_buffer_[4] << 8) | this->rx_buffer_[5];
+      size_t total_len = 6 + data_len + 1;
+
+      if (this->rx_buffer_.size() < total_len)
+        continue;
+
+      // Validate CRC (sum of bytes 0 .. total_len - 2)
       uint8_t crc = 0;
-      for (int i = 0; i < 14; i++) {
+      for (size_t i = 0; i < total_len - 1; i++) {
         crc += this->rx_buffer_[i];
       }
 
-      if (crc == this->rx_buffer_[14]) {
-        ESP_LOGD(TAG, "Received frame (15 bytes): %s",
-                 format_hex_pretty(this->rx_buffer_.data(), 15).c_str());
-        this->parse_status_frame_15_(this->rx_buffer_.data());
+      if (crc == this->rx_buffer_[total_len - 1]) {
+        ESP_LOGD(TAG, "Received frame (%zu bytes): %s", total_len,
+                 format_hex_pretty(this->rx_buffer_.data(), total_len).c_str());
+        this->parse_dynamic_frame_(this->rx_buffer_.data(), total_len);
       } else {
-        ESP_LOGW(TAG, "15-byte CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
-                 crc, this->rx_buffer_[14]);
+        ESP_LOGW(TAG, "Dynamic frame CRC mismatch (calc: 0x%02X, frame: 0x%02X)",
+                 crc, this->rx_buffer_[total_len - 1]);
       }
 
       this->rx_buffer_.erase(this->rx_buffer_.begin(),
-                             this->rx_buffer_.begin() + 15);
+                             this->rx_buffer_.begin() + total_len);
 
     } else if (this->rx_buffer_[0] == 0xAA) {
       uint8_t frame_type = this->rx_buffer_[1];
@@ -317,11 +323,15 @@ void MakeskyblueUART::parse_config_frame_(const uint8_t *frame) {
 }
 
 void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
+  this->parse_dynamic_frame_(frame, 15);
+}
+
+void MakeskyblueUART::parse_dynamic_frame_(const uint8_t *frame, size_t length) {
   this->last_frame_time_ = millis();
 
 #ifdef USE_TEXT_SENSOR
   if (this->raw_frame_text_sensor_) {
-    this->raw_frame_text_sensor_->publish_state(format_hex_pretty(frame, 15));
+    this->raw_frame_text_sensor_->publish_state(format_hex_pretty(frame, length));
   }
 #endif
 
@@ -331,54 +341,94 @@ void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
   }
 #endif
 
-  // 15-byte frame structure:
-  // [0..1]: 55 AA (Header)
-  // [2]: 03 (Command response)
-  // [3]: Register / Telemetry Group Address (0x07, 0x00, 0x01, etc.)
-  // [4..5]: 00 08 (Data Length = 8 bytes)
-  // [6..13]: Data Payload
-  // [14]: Checksum (Sum of bytes 0..13 & 0xFF)
+  uint8_t reg_id = frame[6];
 
-  uint8_t reg_addr = frame[3];
-
-  if (reg_addr == 0x07) {
-    uint16_t pv_v_raw = frame[6] | (frame[7] << 8);
-    uint16_t sys_code_raw = (frame[8] << 8) | frame[9];
-    uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
-
-    float pv_v = pv_v_raw * 0.1f;
-    float pv_w = pv_w_raw * 0.1f;
-    float batt_v_nom = (sys_code_raw > 0 && sys_code_raw <= 4) ? (sys_code_raw * 12.0f) : 48.0f;
-    float batt_i = (pv_w > 0.0f && batt_v_nom > 0.0f) ? (pv_w / batt_v_nom) : 0.0f;
-
+  if (reg_id == 0x65 && length >= 11) {
+    // Cumulative Generated Energy (kWh)
+    uint32_t raw_val = (frame[8] << 16) | (frame[9] << 8) | frame[10];
+    float kwh = raw_val / 100.0f;
 #ifdef USE_SENSOR
-    if (this->solar_voltage_sensor_)
-      this->solar_voltage_sensor_->publish_state(pv_v);
-    if (this->solar_power_sensor_)
-      this->solar_power_sensor_->publish_state(pv_w);
-    if (this->battery_voltage_sensor_)
-      this->battery_voltage_sensor_->publish_state(batt_v_nom);
-    if (this->battery_current_sensor_)
-      this->battery_current_sensor_->publish_state(batt_i);
+    if (this->accumulated_kwh_sensor_)
+      this->accumulated_kwh_sensor_->publish_state(kwh);
 #endif
+    ESP_LOGI(TAG, "Register 0x65 [Cumulative Energy]: %.2f kWh", kwh);
+    return;
+  }
+
+  if (length >= 14) {
+    uint16_t raw_val = (frame[12] << 8) | frame[13];
+    float val = raw_val * 0.1f;
+    uint8_t mode_flags = frame[10];
+    uint8_t error_flags = frame[11];
+
+    switch (reg_id) {
+      case 0x66: // PV Solar Voltage
+#ifdef USE_SENSOR
+        if (this->solar_voltage_sensor_)
+          this->solar_voltage_sensor_->publish_state(val);
+#endif
+        ESP_LOGI(TAG, "Register 0x66 [PV Voltage]: %.1f V", val);
+        break;
+
+      case 0x67: // Battery Voltage
+        this->last_battery_voltage_ = val;
+#ifdef USE_SENSOR
+        if (this->battery_voltage_sensor_)
+          this->battery_voltage_sensor_->publish_state(val);
+#endif
+        ESP_LOGI(TAG, "Register 0x67 [Battery Voltage]: %.1f V", val);
+        break;
+
+      case 0x68: // Load Current
+        ESP_LOGI(TAG, "Register 0x68 [Load Current]: %.1f A", val);
+        break;
+
+      case 0x69: // Charge Current
+        this->last_charge_current_ = val;
+#ifdef USE_SENSOR
+        if (this->battery_current_sensor_)
+          this->battery_current_sensor_->publish_state(val);
+#endif
+        ESP_LOGI(TAG, "Register 0x69 [Charge Current]: %.1f A", val);
+
+        // Calculate and publish Charge Power (P = U_bat * I_charge)
+        if (this->last_battery_voltage_ > 0.0f) {
+          float power_w = this->last_battery_voltage_ * val;
+#ifdef USE_SENSOR
+          if (this->solar_power_sensor_)
+            this->solar_power_sensor_->publish_state(power_w);
+#endif
+          ESP_LOGI(TAG, "Calculated Charge Power: %.1f W", power_w);
+        }
+        break;
+
+      case 0x71: // Controller Temperature
+#ifdef USE_SENSOR
+        if (this->temperature_sensor_)
+          this->temperature_sensor_->publish_state(val);
+#endif
+        ESP_LOGI(TAG, "Register 0x71 [Controller Temp]: %.1f °C", val);
+        break;
+
+      default:
+        ESP_LOGD(TAG, "Unhandled register 0x%02X, raw val: %u", reg_id, raw_val);
+        break;
+    }
 
 #ifdef USE_BINARY_SENSOR
     if (this->mppt_mode_binary_sensor_) {
-      this->mppt_mode_binary_sensor_->publish_state(pv_w > 0.5f);
+      // Bit 2: MPPT Mode Active or charging current > 0.1A
+      this->mppt_mode_binary_sensor_->publish_state((mode_flags & (1 << 2)) != 0 || this->last_charge_current_ > 0.1f);
+    }
+    if (this->battery_undervoltage_binary_sensor_) {
+      // Bit 0: Undervoltage
+      this->battery_undervoltage_binary_sensor_->publish_state((error_flags & (1 << 0)) != 0);
+    }
+    if (this->battery_overvoltage_binary_sensor_) {
+      // Bit 1: Overvoltage
+      this->battery_overvoltage_binary_sensor_->publish_state((error_flags & (1 << 1)) != 0);
     }
 #endif
-
-  } else {
-    ESP_LOGD(TAG, "Received 15-byte frame for addr 0x%02X: %s", reg_addr,
-             format_hex_pretty(frame, 15).c_str());
-
-    // Generic parse for telemetry frames if addr 0x00 / 0x01 contains real-time V_batt
-    uint16_t val1_le = frame[6] | (frame[7] << 8);
-    uint16_t val2_le = frame[8] | (frame[9] << 8);
-    uint16_t val3_be = (frame[12] << 8) | frame[13];
-
-    ESP_LOGD(TAG, "  Telemetry 0x%02X values: LE1=%.1f, LE2=%.1f, BE3=%.1f",
-             reg_addr, val1_le * 0.1f, val2_le * 0.1f, val3_be * 0.1f);
   }
 }
 

@@ -146,10 +146,13 @@ protected:
   void send_status_poll_();
   void parse_status_frame_(const uint8_t *frame);
   void parse_status_frame_15_(const uint8_t *frame);
+  void parse_dynamic_frame_(const uint8_t *frame, size_t length);
   void parse_config_frame_(const uint8_t *frame);
 
   std::vector<uint8_t> rx_buffer_;
   uint32_t last_frame_time_{0};
+  float last_battery_voltage_{0.0f};
+  float last_charge_current_{0.0f};
 
 #ifdef USE_SENSOR
   sensor::Sensor *battery_voltage_sensor_{nullptr};
