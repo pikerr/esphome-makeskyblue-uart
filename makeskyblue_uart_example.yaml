@@ -45,14 +45,10 @@ uart:
 #      sequence:
 #        - lambda: UARTDebug::log_hex(direction, bytes, ' ');
 
-stream_server:
-  id: my_stream_server
-  uart_id: uart_makeskyblue
-  port: 6666 # Порт TCP сокета
-
 makeskyblue_uart:
   id: msb
   uart_id: uart_makeskyblue
+  stream_port: 6666 # Встроенный параллельный TCP-стрим порт для отладки
   update_interval: 10s
 
 sensor:

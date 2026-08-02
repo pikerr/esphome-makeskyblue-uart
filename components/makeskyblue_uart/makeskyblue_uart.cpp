@@ -2,12 +2,23 @@
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 
+#include <cerrno>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 namespace esphome {
 namespace makeskyblue_uart {
 
 const char *const TAG = "makeskyblue_uart";
 
-void MakeskyblueUART::setup() { this->rx_buffer_.reserve(64); }
+void MakeskyblueUART::setup() {
+  this->rx_buffer_.reserve(64);
+  if (this->stream_port_ > 0) {
+    this->init_stream_server_();
+  }
+}
 
 void MakeskyblueUART::update() {
   uint32_t now = millis();
@@ -59,10 +70,97 @@ void MakeskyblueUART::write_register(uint8_t reg, float value) {
   this->write_array(cmd, 8);
 }
 
+void MakeskyblueUART::init_stream_server_() {
+  this->server_fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
+  if (this->server_fd_ < 0) {
+    ESP_LOGE(TAG, "Failed to create stream server socket: %d", errno);
+    return;
+  }
+
+  int opt = 1;
+  ::setsockopt(this->server_fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  int flags = ::fcntl(this->server_fd_, F_GETFL, 0);
+  ::fcntl(this->server_fd_, F_SETFL, flags | O_NONBLOCK);
+
+  struct sockaddr_in addr{};
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = INADDR_ANY;
+  addr.sin_port = htons(this->stream_port_);
+
+  if (::bind(this->server_fd_, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    ESP_LOGE(TAG, "Failed to bind stream server socket to port %u: %d", this->stream_port_, errno);
+    ::close(this->server_fd_);
+    this->server_fd_ = -1;
+    return;
+  }
+
+  if (::listen(this->server_fd_, 4) < 0) {
+    ESP_LOGE(TAG, "Failed to listen on stream server socket: %d", errno);
+    ::close(this->server_fd_);
+    this->server_fd_ = -1;
+    return;
+  }
+
+  ESP_LOGI(TAG, "Parallel stream server listening on TCP port %u", this->stream_port_);
+}
+
+void MakeskyblueUART::accept_stream_clients_() {
+  if (this->server_fd_ < 0) return;
+
+  struct sockaddr_in client_addr{};
+  socklen_t client_len = sizeof(client_addr);
+  int client_fd = ::accept(this->server_fd_, (struct sockaddr *)&client_addr, &client_len);
+  if (client_fd >= 0) {
+    int flags = ::fcntl(client_fd, F_GETFL, 0);
+    ::fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+    this->client_fds_.push_back(client_fd);
+    ESP_LOGI(TAG, "New stream client connected to port %u (fd: %d)", this->stream_port_, client_fd);
+  }
+}
+
+void MakeskyblueUART::broadcast_stream_bytes_(const uint8_t *data, size_t len) {
+  if (this->client_fds_.empty() || len == 0) return;
+
+  for (auto it = this->client_fds_.begin(); it != this->client_fds_.end(); ) {
+    ssize_t res = ::send(*it, data, len, MSG_DONTWAIT);
+    if (res < 0 && (errno != EAGAIN && errno != EWOULDBLOCK)) {
+      ESP_LOGI(TAG, "Stream client (fd: %d) disconnected", *it);
+      ::close(*it);
+      it = this->client_fds_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void MakeskyblueUART::read_stream_clients_() {
+  if (this->client_fds_.empty()) return;
+
+  uint8_t buf[128];
+  for (auto it = this->client_fds_.begin(); it != this->client_fds_.end(); ) {
+    ssize_t bytes_read = ::recv(*it, buf, sizeof(buf), MSG_DONTWAIT);
+    if (bytes_read > 0) {
+      this->write_array(buf, bytes_read);
+      ++it;
+    } else if (bytes_read == 0 || (bytes_read < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+      ESP_LOGI(TAG, "Stream client (fd: %d) disconnected", *it);
+      ::close(*it);
+      it = this->client_fds_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 void MakeskyblueUART::loop() {
+  this->accept_stream_clients_();
+  this->read_stream_clients_();
+
   while (this->available()) {
     uint8_t byte;
     this->read_byte(&byte);
+    this->broadcast_stream_bytes_(&byte, 1);
     this->rx_buffer_.push_back(byte);
 
     // Sync to start header 0xAA or 0x55

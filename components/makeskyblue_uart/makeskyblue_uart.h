@@ -134,6 +134,8 @@ public:
   }
 #endif
 
+  void set_stream_port(uint16_t port) { this->stream_port_ = port; }
+
   void setup() override;
   void update() override;
   void loop() override;
@@ -149,10 +151,19 @@ protected:
   void parse_dynamic_frame_(const uint8_t *frame, size_t length);
   void parse_config_frame_(const uint8_t *frame);
 
+  void init_stream_server_();
+  void accept_stream_clients_();
+  void broadcast_stream_bytes_(const uint8_t *data, size_t len);
+  void read_stream_clients_();
+
   std::vector<uint8_t> rx_buffer_;
   uint32_t last_frame_time_{0};
   float last_battery_voltage_{0.0f};
   float last_charge_current_{0.0f};
+
+  uint16_t stream_port_{0};
+  int server_fd_{-1};
+  std::vector<int> client_fds_;
 
 #ifdef USE_SENSOR
   sensor::Sensor *battery_voltage_sensor_{nullptr};
