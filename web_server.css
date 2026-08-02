@@ -1,14 +1,15 @@
 /* ==========================================================================
-   ESPHome Custom Web Server Theme - Warm Beige & Soft Cream Edition
+   ESPHome Custom Web Server Theme - Dual Mode (Beige Light ☀️ / Dark Slate 🌒)
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
+/* --- 1. LIGHT THEME (Warm Beige & Cream) --- */
 :root {
   --bg-main: #f6f3eb;
   --bg-card: #fffdf8;
   --bg-card-alt: #f8f4ea;
-  --bg-header: #ede6d6;
+  --bg-header: linear-gradient(135deg, #efe7d7 0%, #e6dcc9 100%);
   --border-color: #e5dccb;
   --border-soft: #ede6d8;
   --text-main: #3d3731;
@@ -25,6 +26,45 @@
   --radius-pill: 9999px;
 }
 
+/* --- 2. DARK THEME (Sleek Dark Slate & Cyber Blue) --- */
+/* Triggers when ESPHome JS sets color-scheme: dark OR system prefers dark */
+:root[style*="color-scheme: dark"],
+:root[style*="color-scheme:dark"] {
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-alt: #172033;
+  --bg-header: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --border-color: #334155;
+  --border-soft: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  --accent-primary: #38bdf8;
+  --accent-hover: #0284c7;
+  --accent-soft: rgba(56, 189, 248, 0.15);
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([style*="color-scheme: light"]):not([style*="color-scheme:light"]) {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-alt: #172033;
+    --bg-header: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --border-color: #334155;
+    --border-soft: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+    --accent-primary: #38bdf8;
+    --accent-hover: #0284c7;
+    --accent-soft: rgba(56, 189, 248, 0.15);
+    --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+}
+
 /* Global Reset & Body */
 body, html {
   background-color: var(--bg-main) !important;
@@ -33,6 +73,7 @@ body, html {
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease !important;
 }
 
 /* Web Server Container & Layout */
@@ -41,17 +82,19 @@ esp-app, div.content, .container {
   max-width: 900px !important;
   margin: 0 auto !important;
   padding: 20px !important;
+  transition: background-color 0.3s ease !important;
 }
 
 /* Header Banner */
 header, esp-header, .header {
-  background: linear-gradient(135deg, #efe7d7 0%, #e6dcc9 100%) !important;
+  background: var(--bg-header) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-lg) !important;
   color: var(--text-main) !important;
   padding: 16px 24px !important;
   margin-bottom: 24px !important;
   box-shadow: var(--shadow-soft) !important;
+  transition: all 0.3s ease !important;
 }
 
 header h1, esp-header h1, .header h1 {
@@ -70,18 +113,20 @@ header h1, esp-header h1, .header h1 {
   padding: 12px 16px !important;
   margin-bottom: 20px !important;
   overflow: hidden !important;
-  transition: box-shadow 0.3s ease, transform 0.2s ease !important;
+  transition: all 0.3s ease !important;
 }
 
 .card:hover {
   box-shadow: var(--shadow-hover) !important;
 }
 
-/* Table Styling - Soft Low Contrast */
+/* Table Styling */
 table {
   width: 100% !important;
   border-collapse: separate !important;
   border-spacing: 0 4px !important;
+  border: none !important;
+  background-color: transparent !important;
 }
 
 /* Header Cells */
@@ -96,7 +141,7 @@ th, thead tr {
   padding: 10px 14px !important;
 }
 
-/* Table Rows - Soft Alternating Rounded Bars */
+/* Table Rows */
 tbody tr, tr.entity-row {
   background-color: var(--bg-card) !important;
   border-radius: var(--radius-md) !important;
@@ -108,7 +153,7 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-  background-color: #f1e9d9 !important;
+  background-color: var(--border-soft) !important;
 }
 
 /* Table Cells */
@@ -141,7 +186,7 @@ td:last-child {
   font-size: 0.9rem !important;
 }
 
-/* Form Controls, Inputs & Sliders */
+/* Form Controls, Inputs & Buttons */
 input, select, button, .button {
   border-radius: var(--radius-pill) !important;
   border: 1px solid var(--border-color) !important;
@@ -159,7 +204,7 @@ button, .button {
   font-weight: 600 !important;
   border: none !important;
   cursor: pointer !important;
-  box-shadow: 0 4px 12px rgba(184, 115, 51, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 button:hover, .button:hover {
@@ -178,12 +223,12 @@ input[type="range"] {
   accent-color: var(--accent-primary) !important;
 }
 
-/* ESPHome Version 2 & 3 Shadow DOM CSS Custom Properties */
+/* Shadow DOM CSS Custom Properties Pass-through */
 :root {
-  --primary-color: #b87333 !important;
-  --mdc-theme-primary: #b87333 !important;
-  --mdc-theme-background: #f6f3eb !important;
-  --mdc-theme-surface: #fffdf8 !important;
-  --mdc-theme-text-primary-on-background: #3d3731 !important;
-  --mdc-theme-text-secondary-on-background: #7c7267 !important;
+  --primary-color: var(--accent-primary) !important;
+  --mdc-theme-primary: var(--accent-primary) !important;
+  --mdc-theme-background: var(--bg-main) !important;
+  --mdc-theme-surface: var(--bg-card) !important;
+  --mdc-theme-text-primary-on-background: var(--text-main) !important;
+  --mdc-theme-text-secondary-on-background: var(--text-muted) !important;
 }

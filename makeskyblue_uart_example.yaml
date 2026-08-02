@@ -21,7 +21,7 @@ ota:
 
 web_server:
   port: 80
-  css_include: "web_server.css"
+  css_url: "https://cdn.jsdelivr.net/gh/pikerr/esphome-makeskyblue-uart@main/web_server.css"
 
 logger:
   level: DEBUG
