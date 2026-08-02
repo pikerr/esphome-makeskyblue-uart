@@ -83,6 +83,12 @@ public:
   void set_uvp_recover_voltage_sensor(sensor::Sensor *s) {
     this->uvp_recover_voltage_sensor_ = s;
   }
+  void set_last_seen_seconds_sensor(sensor::Sensor *s) {
+    this->last_seen_seconds_sensor_ = s;
+  }
+  void set_last_register_sensor(sensor::Sensor *s) {
+    this->last_register_sensor_ = s;
+  }
 #endif
 
   // Binary sensor setters
@@ -177,6 +183,8 @@ protected:
   sensor::Sensor *max_charge_current_sensor_{nullptr};
   sensor::Sensor *uvp_off_voltage_sensor_{nullptr};
   sensor::Sensor *uvp_recover_voltage_sensor_{nullptr};
+  sensor::Sensor *last_seen_seconds_sensor_{nullptr};
+  sensor::Sensor *last_register_sensor_{nullptr};
 #endif
 
 #ifdef USE_BINARY_SENSOR

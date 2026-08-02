@@ -20,6 +20,13 @@ void MakeskyblueUART::setup() {
 
 void MakeskyblueUART::update() {
   uint32_t now = millis();
+  if (this->last_frame_time_ > 0) {
+    float seconds = (now - this->last_frame_time_) / 1000.0f;
+#ifdef USE_SENSOR
+    if (this->last_seen_seconds_sensor_)
+      this->last_seen_seconds_sensor_->publish_state(seconds);
+#endif
+  }
   // Only send poll if no status frame received spontaneously for > 10 seconds
   if (this->last_frame_time_ == 0 || (now - this->last_frame_time_ > 10000)) {
     this->send_status_poll_();
@@ -428,6 +435,14 @@ void MakeskyblueUART::parse_dynamic_frame_(const uint8_t *frame, size_t length) 
 #endif
 
   uint8_t reg_id = frame[6];
+#ifdef USE_SENSOR
+  if (this->last_register_sensor_) {
+    this->last_register_sensor_->publish_state(reg_id);
+  }
+  if (this->last_seen_seconds_sensor_) {
+    this->last_seen_seconds_sensor_->publish_state(0.0f);
+  }
+#endif
 
   if (reg_id == 0x65 && length >= 11) {
     // Cumulative Generated Energy (kWh)

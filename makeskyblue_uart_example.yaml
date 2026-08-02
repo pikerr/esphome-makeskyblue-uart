@@ -77,6 +77,12 @@ sensor:
     accumulated_kwh:
       id: msb_accumulated_kwh
       name: "12 Accumulated kWh"
+    last_seen_seconds:
+      id: msb_last_seen_seconds
+      name: "90 Seconds Since Last Msg"
+    last_register:
+      id: msb_last_register
+      name: "91 Last Register Code"
 
 binary_sensor:
   - platform: makeskyblue_uart

@@ -5,6 +5,7 @@ from esphome.components import sensor
 from esphome.const import (
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_DURATION,
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
@@ -14,6 +15,7 @@ from esphome.const import (
     UNIT_AMPERE,
     UNIT_CELSIUS,
     UNIT_KILOWATT_HOURS,
+    UNIT_SECOND,
     UNIT_VOLT,
     UNIT_WATT,
 )
@@ -32,6 +34,8 @@ CONF_FLOAT_VOLTAGE = "float_voltage"
 CONF_MAX_CHARGE_CURRENT = "max_charge_current"
 CONF_UVP_OFF_VOLTAGE = "uvp_off_voltage"
 CONF_UVP_RECOVER_VOLTAGE = "uvp_recover_voltage"
+CONF_LAST_SEEN_SECONDS = "last_seen_seconds"
+CONF_LAST_REGISTER = "last_register"
 
 TYPES = {
     CONF_BATTERY_VOLTAGE: sensor.sensor_schema(
@@ -94,6 +98,16 @@ TYPES = {
         unit_of_measurement=UNIT_VOLT,
         accuracy_decimals=1,
         device_class=DEVICE_CLASS_VOLTAGE,
+    ),
+    CONF_LAST_SEEN_SECONDS: sensor.sensor_schema(
+        unit_of_measurement=UNIT_SECOND,
+        accuracy_decimals=0,
+        device_class=DEVICE_CLASS_DURATION,
+        state_class=STATE_CLASS_MEASUREMENT,
+    ),
+    CONF_LAST_REGISTER: sensor.sensor_schema(
+        accuracy_decimals=0,
+        state_class=STATE_CLASS_MEASUREMENT,
     ),
 }
 
