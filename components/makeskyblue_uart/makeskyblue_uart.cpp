@@ -14,9 +14,14 @@ void MakeskyblueUART::update() {
 }
 
 void MakeskyblueUART::send_status_poll_() {
-  // Read Status Packet: AA 55 00 00 00 55
-  uint8_t poll_cmd[6] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x55};
-  ESP_LOGD(TAG, "Sending status poll request [AA 55 00 00 00 55]");
+  static uint8_t poll_idx = 0;
+  uint8_t addrs[] = {0x00, 0x01, 0x07};
+  uint8_t addr = addrs[poll_idx];
+  poll_idx = (poll_idx + 1) % 3;
+
+  uint8_t poll_cmd[6] = {0xAA, 0x55, addr, 0x00, 0x00, static_cast<uint8_t>((0x55 + addr) & 0xFF)};
+  ESP_LOGD(TAG, "Sending status poll request [AA 55 %02X 00 00 %02X] (addr 0x%02X)",
+           addr, poll_cmd[5], addr);
   this->write_array(poll_cmd, 6);
 }
 
@@ -316,37 +321,53 @@ void MakeskyblueUART::parse_config_frame_(const uint8_t *frame) {
 void MakeskyblueUART::parse_status_frame_15_(const uint8_t *frame) {
   this->last_frame_time_ = millis();
 
+#ifdef USE_TEXT_SENSOR
+  if (this->raw_frame_text_sensor_) {
+    this->raw_frame_text_sensor_->publish_state(format_hex_pretty(frame, 15));
+  }
+#endif
+
 #ifdef USE_BINARY_SENSOR
   if (this->link_connected_binary_sensor_) {
     this->link_connected_binary_sensor_->publish_state(true);
   }
 #endif
 
-  // Frame structure: 55 AA 03 07 00 08 [pv_v_lo pv_v_hi] [batt_i_lo batt_i_hi] [res res] [pv_w_hi pv_w_lo] [crc]
+  // 15-byte status frame structure:
+  // [0..1]: 55 AA (Header)
+  // [2]: 03 (Command)
+  // [3]: 07 (Register/Addr)
+  // [4..5]: 00 08 (Data Length = 8 bytes)
+  // [6..7]: PV Voltage (Little Endian, scale 0.1 V)
+  // [8..9]: System Voltage Code (Big Endian: 4 = 48V, 3 = 36V, 2 = 24V, 1 = 12V)
+  // [10..11]: Reserved (0x0000)
+  // [12..13]: PV Power (Big Endian, scale 0.1 W)
+  // [14]: Checksum (Sum of bytes 0..13)
+
   uint16_t pv_v_raw = frame[6] | (frame[7] << 8);
-  uint16_t batt_i_raw = frame[8] | (frame[9] << 8);
+  uint16_t sys_code_raw = (frame[8] << 8) | frame[9];
   uint16_t pv_w_raw = (frame[12] << 8) | frame[13];
 
-#ifdef USE_SENSOR
   float pv_v = pv_v_raw * 0.1f;
-  float batt_i = batt_i_raw * 0.01f;
-  float pv_w = pv_w_raw * 1.0f;
+  float pv_w = pv_w_raw * 0.1f;
 
+  float batt_v_nom = (sys_code_raw > 0 && sys_code_raw <= 4) ? (sys_code_raw * 12.0f) : 48.0f;
+  float batt_i = (pv_w > 0.0f && batt_v_nom > 0.0f) ? (pv_w / batt_v_nom) : 0.0f;
+
+#ifdef USE_SENSOR
   if (this->solar_voltage_sensor_)
     this->solar_voltage_sensor_->publish_state(pv_v);
-  if (this->battery_current_sensor_)
-    this->battery_current_sensor_->publish_state(batt_i);
   if (this->solar_power_sensor_)
     this->solar_power_sensor_->publish_state(pv_w);
-
-  if (this->battery_voltage_sensor_ && batt_i > 0.1f && pv_w > 0.0f) {
-    this->battery_voltage_sensor_->publish_state(pv_w / batt_i);
-  }
+  if (this->battery_voltage_sensor_)
+    this->battery_voltage_sensor_->publish_state(batt_v_nom);
+  if (this->battery_current_sensor_)
+    this->battery_current_sensor_->publish_state(batt_i);
 #endif
 
 #ifdef USE_BINARY_SENSOR
   if (this->mppt_mode_binary_sensor_) {
-    this->mppt_mode_binary_sensor_->publish_state(pv_w_raw > 10);
+    this->mppt_mode_binary_sensor_->publish_state(pv_w > 1.0f);
   }
 #endif
 }

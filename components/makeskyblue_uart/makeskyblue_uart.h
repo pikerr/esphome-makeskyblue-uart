@@ -1,7 +1,7 @@
 #pragma once
 
-#include "esphome/core/component.h"
 #include "esphome/components/uart/uart.h"
+#include "esphome/core/component.h"
 
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
@@ -45,49 +45,93 @@ class MakeskyblueUARTNumber;
 class MakeskyblueUARTSelect;
 
 class MakeskyblueUART : public PollingComponent, public uart::UARTDevice {
- public:
+public:
   MakeskyblueUART() = default;
 
   // Sensor setters
 #ifdef USE_SENSOR
-  void set_battery_voltage_sensor(sensor::Sensor *s) { this->battery_voltage_sensor_ = s; }
-  void set_battery_current_sensor(sensor::Sensor *s) { this->battery_current_sensor_ = s; }
-  void set_solar_voltage_sensor(sensor::Sensor *s) { this->solar_voltage_sensor_ = s; }
-  void set_solar_power_sensor(sensor::Sensor *s) { this->solar_power_sensor_ = s; }
-  void set_temperature_sensor(sensor::Sensor *s) { this->temperature_sensor_ = s; }
-  void set_accumulated_kwh_sensor(sensor::Sensor *s) { this->accumulated_kwh_sensor_ = s; }
-  void set_bulk_voltage_sensor(sensor::Sensor *s) { this->bulk_voltage_sensor_ = s; }
-  void set_float_voltage_sensor(sensor::Sensor *s) { this->float_voltage_sensor_ = s; }
-  void set_max_charge_current_sensor(sensor::Sensor *s) { this->max_charge_current_sensor_ = s; }
-  void set_uvp_off_voltage_sensor(sensor::Sensor *s) { this->uvp_off_voltage_sensor_ = s; }
-  void set_uvp_recover_voltage_sensor(sensor::Sensor *s) { this->uvp_recover_voltage_sensor_ = s; }
+  void set_battery_voltage_sensor(sensor::Sensor *s) {
+    this->battery_voltage_sensor_ = s;
+  }
+  void set_battery_current_sensor(sensor::Sensor *s) {
+    this->battery_current_sensor_ = s;
+  }
+  void set_solar_voltage_sensor(sensor::Sensor *s) {
+    this->solar_voltage_sensor_ = s;
+  }
+  void set_solar_power_sensor(sensor::Sensor *s) {
+    this->solar_power_sensor_ = s;
+  }
+  void set_temperature_sensor(sensor::Sensor *s) {
+    this->temperature_sensor_ = s;
+  }
+  void set_accumulated_kwh_sensor(sensor::Sensor *s) {
+    this->accumulated_kwh_sensor_ = s;
+  }
+  void set_bulk_voltage_sensor(sensor::Sensor *s) {
+    this->bulk_voltage_sensor_ = s;
+  }
+  void set_float_voltage_sensor(sensor::Sensor *s) {
+    this->float_voltage_sensor_ = s;
+  }
+  void set_max_charge_current_sensor(sensor::Sensor *s) {
+    this->max_charge_current_sensor_ = s;
+  }
+  void set_uvp_off_voltage_sensor(sensor::Sensor *s) {
+    this->uvp_off_voltage_sensor_ = s;
+  }
+  void set_uvp_recover_voltage_sensor(sensor::Sensor *s) {
+    this->uvp_recover_voltage_sensor_ = s;
+  }
 #endif
 
   // Binary sensor setters
 #ifdef USE_BINARY_SENSOR
-  void set_link_connected_binary_sensor(binary_sensor::BinarySensor *s) { this->link_connected_binary_sensor_ = s; }
-  void set_mppt_mode_binary_sensor(binary_sensor::BinarySensor *s) { this->mppt_mode_binary_sensor_ = s; }
-  void set_battery_undervoltage_binary_sensor(binary_sensor::BinarySensor *s) { this->battery_undervoltage_binary_sensor_ = s; }
-  void set_battery_overvoltage_binary_sensor(binary_sensor::BinarySensor *s) { this->battery_overvoltage_binary_sensor_ = s; }
+  void set_link_connected_binary_sensor(binary_sensor::BinarySensor *s) {
+    this->link_connected_binary_sensor_ = s;
+  }
+  void set_mppt_mode_binary_sensor(binary_sensor::BinarySensor *s) {
+    this->mppt_mode_binary_sensor_ = s;
+  }
+  void set_battery_undervoltage_binary_sensor(binary_sensor::BinarySensor *s) {
+    this->battery_undervoltage_binary_sensor_ = s;
+  }
+  void set_battery_overvoltage_binary_sensor(binary_sensor::BinarySensor *s) {
+    this->battery_overvoltage_binary_sensor_ = s;
+  }
 #endif
 
   // Number setters
 #ifdef USE_NUMBER
-  void set_bulk_voltage_number(MakeskyblueUARTNumber *n) { this->bulk_voltage_number_ = n; }
-  void set_float_voltage_number(MakeskyblueUARTNumber *n) { this->float_voltage_number_ = n; }
-  void set_max_charge_current_number(MakeskyblueUARTNumber *n) { this->max_charge_current_number_ = n; }
-  void set_uvp_off_voltage_number(MakeskyblueUARTNumber *n) { this->uvp_off_voltage_number_ = n; }
-  void set_uvp_recover_voltage_number(MakeskyblueUARTNumber *n) { this->uvp_recover_voltage_number_ = n; }
+  void set_bulk_voltage_number(MakeskyblueUARTNumber *n) {
+    this->bulk_voltage_number_ = n;
+  }
+  void set_float_voltage_number(MakeskyblueUARTNumber *n) {
+    this->float_voltage_number_ = n;
+  }
+  void set_max_charge_current_number(MakeskyblueUARTNumber *n) {
+    this->max_charge_current_number_ = n;
+  }
+  void set_uvp_off_voltage_number(MakeskyblueUARTNumber *n) {
+    this->uvp_off_voltage_number_ = n;
+  }
+  void set_uvp_recover_voltage_number(MakeskyblueUARTNumber *n) {
+    this->uvp_recover_voltage_number_ = n;
+  }
 #endif
 
   // Select setters
 #ifdef USE_SELECT
-  void set_battery_type_select(MakeskyblueUARTSelect *s) { this->battery_type_select_ = s; }
+  void set_battery_type_select(MakeskyblueUARTSelect *s) {
+    this->battery_type_select_ = s;
+  }
 #endif
 
   // Text sensor setters
 #ifdef USE_TEXT_SENSOR
-  void set_raw_frame_text_sensor(text_sensor::TextSensor *s) { this->raw_frame_text_sensor_ = s; }
+  void set_raw_frame_text_sensor(text_sensor::TextSensor *s) {
+    this->raw_frame_text_sensor_ = s;
+  }
 #endif
 
   void setup() override;
@@ -98,7 +142,7 @@ class MakeskyblueUART : public PollingComponent, public uart::UARTDevice {
   void write_register(uint8_t reg, float value);
   void read_register(uint8_t reg);
 
- protected:
+protected:
   void send_status_poll_();
   void parse_status_frame_(const uint8_t *frame);
   void parse_status_frame_15_(const uint8_t *frame);
@@ -147,11 +191,11 @@ class MakeskyblueUART : public PollingComponent, public uart::UARTDevice {
 
 #ifdef USE_NUMBER
 class MakeskyblueUARTNumber : public number::Number {
- public:
+public:
   void set_parent(MakeskyblueUART *parent) { this->parent_ = parent; }
   void set_register(uint8_t reg) { this->reg_ = reg; }
 
- protected:
+protected:
   void control(float value) override {
     if (this->parent_ != nullptr) {
       this->parent_->write_register(this->reg_, value);
@@ -165,13 +209,14 @@ class MakeskyblueUARTNumber : public number::Number {
 
 #ifdef USE_SELECT
 class MakeskyblueUARTSelect : public select::Select {
- public:
+public:
   void set_parent(MakeskyblueUART *parent) { this->parent_ = parent; }
   void set_register(uint8_t reg) { this->reg_ = reg; }
 
- protected:
+protected:
   void control(const std::string &value) override {
-    if (this->parent_ == nullptr) return;
+    if (this->parent_ == nullptr)
+      return;
     auto &options = this->traits.get_options();
     for (size_t i = 0; i < options.size(); i++) {
       if (options[i] == value) {
@@ -186,5 +231,5 @@ class MakeskyblueUARTSelect : public select::Select {
 };
 #endif
 
-}  // namespace makeskyblue_uart
-}  // namespace esphome
+} // namespace makeskyblue_uart
+} // namespace esphome
