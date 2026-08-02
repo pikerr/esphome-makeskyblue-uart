@@ -25,6 +25,7 @@ from . import MakeskyblueUART
 CONF_MAKESKYBLUE_UART_ID = "makeskyblue_uart_id"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_BATTERY_CURRENT = "battery_current"
+CONF_LOAD_CURRENT = "load_current"
 CONF_SOLAR_VOLTAGE = "solar_voltage"
 CONF_SOLAR_POWER = "solar_power"
 CONF_TEMPERATURE = "temperature"
@@ -45,6 +46,12 @@ TYPES = {
         state_class=STATE_CLASS_MEASUREMENT,
     ),
     CONF_BATTERY_CURRENT: sensor.sensor_schema(
+        unit_of_measurement=UNIT_AMPERE,
+        accuracy_decimals=1,
+        device_class=DEVICE_CLASS_CURRENT,
+        state_class=STATE_CLASS_MEASUREMENT,
+    ),
+    CONF_LOAD_CURRENT: sensor.sensor_schema(
         unit_of_measurement=UNIT_AMPERE,
         accuracy_decimals=1,
         device_class=DEVICE_CLASS_CURRENT,

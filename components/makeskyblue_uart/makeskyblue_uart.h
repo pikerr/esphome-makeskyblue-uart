@@ -56,6 +56,9 @@ public:
   void set_battery_current_sensor(sensor::Sensor *s) {
     this->battery_current_sensor_ = s;
   }
+  void set_load_current_sensor(sensor::Sensor *s) {
+    this->load_current_sensor_ = s;
+  }
   void set_solar_voltage_sensor(sensor::Sensor *s) {
     this->solar_voltage_sensor_ = s;
   }
@@ -174,6 +177,7 @@ protected:
 #ifdef USE_SENSOR
   sensor::Sensor *battery_voltage_sensor_{nullptr};
   sensor::Sensor *battery_current_sensor_{nullptr};
+  sensor::Sensor *load_current_sensor_{nullptr};
   sensor::Sensor *solar_voltage_sensor_{nullptr};
   sensor::Sensor *solar_power_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};

@@ -71,6 +71,9 @@ sensor:
     battery_current:
       id: msb_battery_current
       name: "04 Battery Current"
+    load_current:
+      id: msb_load_current
+      name: "05 Load Current"
     temperature:
       id: msb_temperature
       name: "11 Temperature"

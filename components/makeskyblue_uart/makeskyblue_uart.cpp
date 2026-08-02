@@ -481,6 +481,10 @@ void MakeskyblueUART::parse_dynamic_frame_(const uint8_t *frame, size_t length) 
         break;
 
       case 0x68: // Load Current
+#ifdef USE_SENSOR
+        if (this->load_current_sensor_)
+          this->load_current_sensor_->publish_state(val);
+#endif
         ESP_LOGI(TAG, "Register 0x68 [Load Current]: %.1f A", val);
         break;
 
