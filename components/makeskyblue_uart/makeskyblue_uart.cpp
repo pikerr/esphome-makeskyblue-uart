@@ -1,6 +1,7 @@
 #include "makeskyblue_uart.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+#include "esphome/components/network/util.h"
 
 #include <cerrno>
 #include <fcntl.h>
@@ -15,9 +16,6 @@ const char *const TAG = "makeskyblue_uart";
 
 void MakeskyblueUART::setup() {
   this->rx_buffer_.reserve(64);
-  if (this->stream_port_ > 0) {
-    this->init_stream_server_();
-  }
 }
 
 void MakeskyblueUART::update() {
@@ -154,6 +152,10 @@ void MakeskyblueUART::read_stream_clients_() {
 }
 
 void MakeskyblueUART::loop() {
+  if (this->stream_port_ > 0 && this->server_fd_ < 0 && network::is_connected()) {
+    this->init_stream_server_();
+  }
+
   this->accept_stream_clients_();
   this->read_stream_clients_();
 
