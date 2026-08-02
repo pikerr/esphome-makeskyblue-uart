@@ -10,7 +10,11 @@ const char *const TAG = "makeskyblue_uart";
 void MakeskyblueUART::setup() { this->rx_buffer_.reserve(64); }
 
 void MakeskyblueUART::update() {
-  this->send_status_poll_();
+  uint32_t now = millis();
+  // Only send poll if no status frame received spontaneously for > 10 seconds
+  if (this->last_frame_time_ == 0 || (now - this->last_frame_time_ > 10000)) {
+    this->send_status_poll_();
+  }
 }
 
 void MakeskyblueUART::send_status_poll_() {
