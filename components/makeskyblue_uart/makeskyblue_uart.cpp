@@ -153,9 +153,9 @@ void MakeskyblueUART::loop() {
     }
   }
 
-  // Timeout check (no valid status frame for > 5000 ms)
+  // Timeout check (no valid status frame for > 20000 ms)
   uint32_t now = millis();
-  if (this->last_frame_time_ != 0 && (now - this->last_frame_time_ > 5000)) {
+  if (this->last_frame_time_ != 0 && (now - this->last_frame_time_ > 20000)) {
     ESP_LOGW(TAG, "Connection timeout (no status frames from controller)");
     this->last_frame_time_ = 0;
 
