@@ -1,102 +1,108 @@
 esphome:
   name: makeskyblue-mppt
-  friendly_name: MakeSkyBlue MPPT Controller
+  friendly_name: MakeSkyBlue MPPT
 
 esp32:
   board: esp32dev
   framework:
-    type: arduino
+    type: esp-idf
+    advanced:
+      minimum_chip_revision: "3.1" # Уменьшает размер бинарного файла
+      sram1_as_iram: true # Освобождает +40 КБ оперативной памяти (SRAM)
 
+# Подключаем ваш опубликованный репозиторий напрямую из GitHub
 external_components:
   - source: github://pikerr/esphome-makeskyblue-uart
-
-wifi:
-  ssid: "YOUR_WIFI_SSID"
-  password: "YOUR_WIFI_PASSWORD"
-  ap:
-    ssid: "Makeskyblue-Mppt Fallback"
-    password: "password123"
+    refresh: 2s
 
 api:
 ota:
   - platform: esphome
-  - platform: web_server
 
 web_server:
   port: 80
-  version: 3
 
 logger:
   level: DEBUG
 
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: msb-uart Fallback Hotspot
+    password: "11111111"
+
 uart:
   - id: uart_makeskyblue
-    tx_pin: GPIO17
-    rx_pin: GPIO16
+    tx_pin: GPIO16
+    rx_pin: GPIO17
     baud_rate: 9600
+#    debug:
+#      direction: BOTH
+#      dummy_receiver: false
+#      after:
+#        bytes: 1
+#      sequence:
+#        - lambda: UARTDebug::log_hex(direction, bytes, ' ');
+
+stream_server:
+  id: my_stream_server
+  uart_id: uart_makeskyblue
+  port: 6666 # Порт TCP сокета
 
 makeskyblue_uart:
   id: msb
   uart_id: uart_makeskyblue
-  update_interval: 2s
+  update_interval: 10s
 
 sensor:
   - platform: makeskyblue_uart
     makeskyblue_uart_id: msb
-    battery_voltage:
-      id: msb_battery_voltage
-      name: "Напряжение АКБ"
-    battery_current:
-      id: msb_battery_current
-      name: "Ток заряда АКБ"
     solar_voltage:
       id: msb_solar_voltage
-      name: "Напряжение СП"
+      name: "01 Input Voltage"
     solar_power:
       id: msb_solar_power
-      name: "Мощность СП"
+      name: "02 Input Power"
+    battery_voltage:
+      id: msb_battery_voltage
+      name: "03 Battery Voltage"
+    battery_current:
+      id: msb_battery_current
+      name: "04 Battery Current"
     temperature:
       id: msb_temperature
-      name: "Температура"
+      name: "11 Temperature"
     accumulated_kwh:
       id: msb_accumulated_kwh
-      name: "Выработка кВт·ч"
+      name: "12 Accumulated kWh"
 
 binary_sensor:
   - platform: makeskyblue_uart
     makeskyblue_uart_id: msb
     link_connected:
       id: msb_link_connected
-      name: "Связь UART"
+      name: "21 UART Connection"
     mppt_mode:
       id: msb_mppt_mode
-      name: "Режим MPPT"
+      name: "22 MPPT Mode"
 
 number:
   - platform: makeskyblue_uart
     makeskyblue_uart_id: msb
     bulk_voltage:
       id: msb_bulk_voltage
-      name: "Задать Bulk V"
-      min_value: 10.0
-      max_value: 65.0
-      step: 0.1
+      name: "31 Bulk Voltage"
     float_voltage:
       id: msb_float_voltage
-      name: "Задать Float V"
-      min_value: 10.0
-      max_value: 65.0
-      step: 0.1
+      name: "32 Float Voltage"
     max_charge_current:
       id: msb_max_charge_current
-      name: "Задать макс. ток A"
-      min_value: 0.0
-      max_value: 60.0
-      step: 1.0
+      name: "33 Max Current"
 
 select:
   - platform: makeskyblue_uart
     makeskyblue_uart_id: msb
     battery_type:
       id: msb_battery_type
-      name: "Тип АКБ"
+      name: "34 Battery Type"
