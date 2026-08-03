@@ -63,18 +63,15 @@ sensor:
     solar_voltage:
       id: msb_solar_voltage
       name: "01 Input Voltage"
-    solar_power:
-      id: msb_solar_power
-      name: "02 Input Power"
     battery_voltage:
       id: msb_battery_voltage
-      name: "03 Battery Voltage"
-    battery_current:
-      id: msb_battery_current
-      name: "04 Battery Current"
+      name: "02 Battery Voltage"
     load_current:
       id: msb_load_current
-      name: "05 Load Current"
+      name: "03 Load Current"
+    load_power:
+      id: msb_load_power
+      name: "04 Load Power"
     temperature:
       id: msb_temperature
       name: "11 Temperature"

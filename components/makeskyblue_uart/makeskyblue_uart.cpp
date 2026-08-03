@@ -317,8 +317,6 @@ void MakeskyblueUART::parse_status_frame_(const uint8_t *frame) {
     this->battery_current_sensor_->publish_state(batt_i_raw * 0.1f);
   if (this->solar_voltage_sensor_)
     this->solar_voltage_sensor_->publish_state(pv_v_raw * 0.1f);
-  if (this->solar_power_sensor_)
-    this->solar_power_sensor_->publish_state(pv_w_raw * 1.0f);
   if (this->temperature_sensor_)
     this->temperature_sensor_->publish_state(temp_raw * 0.1f);
   if (this->accumulated_kwh_sensor_)
@@ -488,23 +486,12 @@ void MakeskyblueUART::parse_dynamic_frame_(const uint8_t *frame, size_t length) 
         ESP_LOGI(TAG, "Register 0x68 [Load Current]: %.1f A", val);
         break;
 
-      case 0x69: // Charge Current
-        this->last_charge_current_ = val;
+      case 0x69: // Load Power
 #ifdef USE_SENSOR
-        if (this->battery_current_sensor_)
-          this->battery_current_sensor_->publish_state(val);
+        if (this->load_power_sensor_)
+          this->load_power_sensor_->publish_state(val);
 #endif
-        ESP_LOGI(TAG, "Register 0x69 [Charge Current]: %.1f A", val);
-
-        // Calculate and publish Charge Power (P = U_bat * I_charge)
-        if (this->last_battery_voltage_ > 0.0f) {
-          float power_w = this->last_battery_voltage_ * val;
-#ifdef USE_SENSOR
-          if (this->solar_power_sensor_)
-            this->solar_power_sensor_->publish_state(power_w);
-#endif
-          ESP_LOGI(TAG, "Calculated Charge Power: %.1f W", power_w);
-        }
+        ESP_LOGI(TAG, "Register 0x69 [Load Power]: %.1f W", val);
         break;
 
       case 0x71: // Controller Temperature

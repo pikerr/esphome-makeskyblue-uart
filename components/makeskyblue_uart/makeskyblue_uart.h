@@ -59,11 +59,11 @@ public:
   void set_load_current_sensor(sensor::Sensor *s) {
     this->load_current_sensor_ = s;
   }
+  void set_load_power_sensor(sensor::Sensor *s) {
+    this->load_power_sensor_ = s;
+  }
   void set_solar_voltage_sensor(sensor::Sensor *s) {
     this->solar_voltage_sensor_ = s;
-  }
-  void set_solar_power_sensor(sensor::Sensor *s) {
-    this->solar_power_sensor_ = s;
   }
   void set_temperature_sensor(sensor::Sensor *s) {
     this->temperature_sensor_ = s;
@@ -178,8 +178,8 @@ protected:
   sensor::Sensor *battery_voltage_sensor_{nullptr};
   sensor::Sensor *battery_current_sensor_{nullptr};
   sensor::Sensor *load_current_sensor_{nullptr};
+  sensor::Sensor *load_power_sensor_{nullptr};
   sensor::Sensor *solar_voltage_sensor_{nullptr};
-  sensor::Sensor *solar_power_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *accumulated_kwh_sensor_{nullptr};
   sensor::Sensor *bulk_voltage_sensor_{nullptr};

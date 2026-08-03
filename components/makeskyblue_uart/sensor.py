@@ -26,8 +26,8 @@ CONF_MAKESKYBLUE_UART_ID = "makeskyblue_uart_id"
 CONF_BATTERY_VOLTAGE = "battery_voltage"
 CONF_BATTERY_CURRENT = "battery_current"
 CONF_LOAD_CURRENT = "load_current"
+CONF_LOAD_POWER = "load_power"
 CONF_SOLAR_VOLTAGE = "solar_voltage"
-CONF_SOLAR_POWER = "solar_power"
 CONF_TEMPERATURE = "temperature"
 CONF_ACCUMULATED_KWH = "accumulated_kwh"
 CONF_BULK_VOLTAGE = "bulk_voltage"
@@ -57,16 +57,16 @@ TYPES = {
         device_class=DEVICE_CLASS_CURRENT,
         state_class=STATE_CLASS_MEASUREMENT,
     ),
+    CONF_LOAD_POWER: sensor.sensor_schema(
+        unit_of_measurement=UNIT_WATT,
+        accuracy_decimals=1,
+        device_class=DEVICE_CLASS_POWER,
+        state_class=STATE_CLASS_MEASUREMENT,
+    ),
     CONF_SOLAR_VOLTAGE: sensor.sensor_schema(
         unit_of_measurement=UNIT_VOLT,
         accuracy_decimals=1,
         device_class=DEVICE_CLASS_VOLTAGE,
-        state_class=STATE_CLASS_MEASUREMENT,
-    ),
-    CONF_SOLAR_POWER: sensor.sensor_schema(
-        unit_of_measurement=UNIT_WATT,
-        accuracy_decimals=0,
-        device_class=DEVICE_CLASS_POWER,
         state_class=STATE_CLASS_MEASUREMENT,
     ),
     CONF_TEMPERATURE: sensor.sensor_schema(
